@@ -1,0 +1,169 @@
+# pre-trained weights file, can be a keras hdf5 model or .caffemodel
+#model_weights_file: '/nas2/deliverables/v16/model.hdf5'
+model_weights_file: '/nas2/praveen/home/rnd-libs/rnd_libs/lib/keras/model-full-conv.npy'
+# ignore these layer types while loading
+ignore_while_loading: ['softmax','partClassifiers','pool3','prob']
+# For using full image for training
+#number of partClassifiers.
+n_channels_partClassifiers: 9000
+
+trainable_layers: ['softmax','partClassifiers']
+
+border_mode: 'same'
+# convolutional layer init
+conv_init: he_normal
+# Fully connected layer initialization
+fc_init: 'glorot_uniform'
+# Number of outputs
+nb_classes: 7735
+# scaling applied to activations
+activation: 'sigmoid'
+# number of image channels
+n_channels: 3
+# image width
+image_width: 779
+# image height
+image_height: 779
+# drop out rate
+drop_out: 0.5
+
+nodes:
+
+    - name: conv
+      input: input
+      type: Convolution2D
+      parameter:
+        nb_filter: 32
+        nb_row: 3
+        nb_col: 3
+        subsample: [2,2]
+        activation: linear
+
+    - name: conv_bn
+      input: conv
+      type: BatchNormalization
+      parameter:
+        mode: 0
+        epsilon: 0.000001
+        axis: 1
+        momentum: 0
+
+    - name: conv_nonlin
+      input: conv_bn
+      type: Activation
+      parameter:
+        mode: relu
+
+    - name: conv_1
+      input: conv_nonlin
+      type: Convolution2D
+      parameter:
+        nb_filter: 32
+        nb_row: 3
+        nb_col: 3
+        activation: linear
+
+    - name: conv_bn_1
+      input: conv_1
+      type: BatchNormalization
+      parameter:
+        mode: 0
+        epsilon: 0.0001
+        axis: 1
+
+    - name: conv_nonlin_1
+      input: conv_bn_1
+      type: Activation
+      parameter:
+        mode: relu
+
+    - name: padding_conv2
+      input: conv_nonlin_1
+      type: ZeroPadding2D
+      parameter:
+        padding: [1,1]
+
+    - name: conv_2
+      input: padding_conv2
+      type: Convolution2D
+      parameter:
+        nb_filter: 64
+        nb_row: 3
+        nb_col: 3
+        activation: linear
+
+    - name: conv_bn_2
+      input: conv_2
+      type: BatchNormalization
+      parameter:
+        mode: 0
+        epsilon: 0.0001
+        axis: 1
+
+    - name: conv_nonlin_2
+      input: conv_bn_2
+      type: Activation
+      parameter:
+        mode: relu
+
+    - name: pool
+      input: conv_nonlin_2
+      type: MaxPooling2D
+      parameter:
+        pool_size: [3,3]
+        strides: [2,2]
+
+    - name: conv_3
+      input: pool
+      type: Convolution2D
+      parameter:
+        nb_filter: 80
+        nb_row: 1
+        nb_col: 1
+        activation: linear
+
+    - name: conv_bn_3
+      input: conv_3
+      type: BatchNormalization
+      parameter:
+        mode: 0
+        epsilon: 0.0001
+        axis: 1
+
+    - name: conv_nonlin_3
+      input: conv_bn_3
+      type: Activation
+      parameter:
+        mode: relu
+
+    - name: conv_4
+      input: conv_nonlin_3
+      type: Convolution2D
+      parameter:
+        nb_filter: 192
+        nb_row: 3
+        nb_col: 3
+        activation: linear
+
+    - name: conv_bn_4
+      input: conv_4
+      type: BatchNormalization
+      parameter:
+        mode: 0
+        epsilon: 0.0001
+        axis: 1
+
+    - name: conv_nonlin_4
+      input: conv_bn_4
+      type: Activation
+      parameter:
+        mode: relu
+
+    - name: pool_1
+      input: conv_nonlin_4
+      type: MaxPooling2D
+      parameter:
+        pool_size: [3,3]
+        strides: [2,2]
+
+
