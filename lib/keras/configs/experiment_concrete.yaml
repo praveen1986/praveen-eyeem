@@ -1,30 +1,16 @@
-title: fc_v3_test
-resize_test: False
-resize_images: True
-#percentage of subset of rare classes to consider for evaluation puporse
-percentate_of_classesFrEval: 2
-# # model name
-model_name: inception_v3_finetune
-# model config file path
-model_config_file: '/nas2/praveen/home/rnd-libs/rnd_libs/models/keras/inception_v3_finetune.yaml'
 # model name
-# model_name: inception_v3_fc
-# # model config file path
-# model_config_file: '/nas2/praveen/home/rnd-libs/rnd_libs/models/keras/inception_v3_fc.yaml'
+model_name: inception_v3_fc
+# model config file path
+model_config_file: '/home/harsimrat/workspace/rnd-libs/rnd_libs/models/keras/inception_v3_fc.yaml'
 # loss function
-loss: 'categorical_crossentropy'
+loss: 'cosine'
 # optimizer
 optimizer: 'rmsprop'
 # Learning rate
-lr: 0.1
-beta: 10.0
-betas: [0.9,3.0,10.0,20.0]
-#betas: [0.0,0.1]
-#betas: [0.0]
-#scale_image: False
+lr: 1.0
 # Momentum
 momentum: 0.9
-# Learning rate Decay
+# Learning rate Decaymm,./
 decay: 0.95
 # Epsilon
 epsilon: 1.0
@@ -32,30 +18,30 @@ epsilon: 1.0
 stepsize: 0.1
 # Examples per epoc
 example_per_epoc: 1000000
-# epoc size
-epoc_size: 15000
 # Save snapshot after
 snapshot: 5000
 # snapshot_prefix location
-snapshot_dir: '/nas2/praveen/home/rnd-libs/results/snapshot/'
+snapshot_dir: '/nas/models/v16_multi_label_fc/snapshots-10-11-2016-inception_v3-label-keywording'
 # logging directory
-log_dir: /nas2/praveen/home/rnd-libs/results/logs
+log_dir: '/nas/models/v16_multi_label_fc/logs'
 # prefix name:
 snapshot_prefix: 'snapshot'
 # maximum iteration
 maximum_iteration: 1000000
-# Number of testing iterations 
+# epoc size
+epoc_size: 1000000
+# Number of testing iterations
 test_iter: 1000
 # Testing interval
 test_interval: 1000
-# lmdb keep to cache keep images in memory 
-train_lmdb_keep: 64    
-# lmdb keep to cache keep images in memory 
+# lmdb keep to cache keep images in memory
+train_lmdb_keep: 64
+# lmdb keep to cache keep images in memory
 val_lmdb_keep: 1024
 # Batch size
-batch_size: 25
+batch_size: 32
 # global threshold when to be used with precision below
-global_threshold: 0.80
+global_threshold: 0.95
 # Display results after display iterations
 display: 100
 # Measure of performance metric 'top-k accuracy', 'precision'
@@ -80,44 +66,41 @@ image_shuffle:
  train: [2,0,1]
  test: [2,0,1]
 output_node_name:
- train: ['prob','softmax']
- test: ['prob','softmax']
+ train: 'softmax'
+ test: 'softmax'
 # train_file
-train_file_list: '/nas2/datasets/keywording/lists/keywording_data-v4-29-11-2016-train.txt'
+train_file_list: '/nas/caffe_datasets/lists/getty-collection/getty-collection-1m-orig-train.txt'
 # train_file
-train_file: '/nas2/datasets/keywording/lmdb_files/getty-collection-v3-19-08-2016/train'
-# # val_file:
-# val_file_list: '/nas/caffe_datasets/lists/getty-collection/getty-collection-v3-19-08-2016-val.txt'
-# # val_file:
-# val_file: '/nas/caffe_datasets/lmdb_files/getty-collection-v3-19-08-2016/val'
+train_file: '/nas/caffe_datasets/lmdb_files/v13-multi-label-1m-orig/train'
 # val_file:
-val_file_list: '/nas2/datasets/keywording/lists/keywording_data-v4-29-11-2016-val.txt'
+val_file_list: '/nas/caffe_datasets/lists/getty-collection/getty-collection-1m-orig-val.txt'
 # val_file:
-val_file: '/nas2/datasets/keywording/lmdb_files/getty-collection-v3-19-08-2016/val'
+val_file: '/nas/caffe_datasets/lmdb_files/v13-multi-label-1m-orig/val'
 # Square images before predictions
+test_file: '/nas/caffe_datasets/lmdb_files/getty-collection-v3-19-08-2016/test'
+# gt_dir
+gt_dir: '/data/datasets/getty-collection/getty-06-07-2015'
+
 square_crop: False
 # Overwrite predictions jsons
 force: True
 # results_dir
-results_dir: '/nas2/praveen/home/rnd-libs/results/predictions/v16_random_random/'
-# test file list
-test_file_list: '/nas2/datasets/keywording/lists/keywording_data-v4-29-11-2016-test.txt'
-#test_file: '/nas2/praveen/home/rnd-libs/rnd_libs/lib/keras/keywording_test_images_labels'
-test_file: '/nas2/datasets/keywording/lmdb_files/getty-collection-v3-19-08-2016/test'
+results_dir: '/nas/predictions/snapshots-15-06-2016-aesthooglenet-drop_out-CE'
 # gt_dir
 gt_dir: '/data/datasets/getty-collection/getty-06-07-2015'
 # Label file
-#label_file: '/nas2/caffe_datasets/lists/getty-collection/getty-collection-v3-19-08-2016-label-info.npz'
-label_file: '/nas2/caffe_datasets/lists/getty-collection/getty-collection-v3-19-08-2016-label-info-fast.npz'
+label_file: '/nas/datasets/getty-collection/getty-collection-1m-label-info-file.npz'
+# Label embedding file
+label_embedding_file: '/nas/caffe_datasets/lmdb_files/v13-multi-label-1m-orig/pmi/label-embedding-4096.npz'
+#label_file: None
 # Label sampling type : [ None, drop_out, mikolov, mikolov_drop_out, mikolov_original, mikolov_em_drop_out ]
-label_sampling: mikolov_drop_out
+label_sampling: mikolov
 # number of epocs
 nb_epocs: 1
 # show accuracy while training
 show_accuracy: 0
 # demo synset file
-synset_file: '/nas2/praveen/home/rnd-libs/rnd_libs/lib/keras/synset-V16'
-synset_file_training: '/nas2/praveen/home/rnd-libs/rnd_libs/lib/keras/synset-V16_training'
+synset_file: /nas/caffe_datasets/lists/getty-collection/getty-collection-1m-unbalanced-synset-file.txt
 # class_weight:
 class_weight: False
 # train_info
@@ -136,8 +119,3 @@ stop_list_: ['male likeness', 'female likeness', 'female animal', 'animal neck',
 mapping_list: [['caucasian ethnicity', 'person'],['christianity', 'religion'],['catholicism','religion'],['caucasian','person'],['asian and indian ethnicities', 'person'],['buddhism', 'religion'],['adult animal', 'animal'],['italian culture', 'culture'],['chinese culture', 'culture'], ['german culture', 'culture'],['japanese culture', 'culture'],['french culture', 'culture'],['indian culture', 'culture'],['american culture', 'culture'],['minaret', 'religion'],['british culture', 'culture'],['indian ethnicity', 'person'],['hinduism', 'religion'],['indonesian culture', 'culture'],['african-american ethnicity', 'person'],['thai culture', 'culture'],['single parent', 'person'],['asian', 'person'],['ancient egyptian culture', 'culture'],['greek culture', 'culture'],['european culture', 'culture'],['russian culture', 'culture'],['spain', 'culture'],['chinese ethnicity', 'person'],['east asian ethnicity', 'person'],['french flag','flag'],['preschool child','person'],['male','person'],['human neck','person'],['hands behind head','person'],['thumbs up','person'],['buddhism','religion'],['belgian culture','culture'],['one teenage boy only','people'],['english culture','culture'],['czech culture','culture'],['mid-length hair','people'],['granddaughter','people'],['buttocks','people'],['multi-generation family','people'],['grandmother','person'],['beggar','person'],['human interest','person'],['human hand','person'],['two person','person'],['police officer','person'],['semi dressed','person'],['pianist','person'],['businessman','person'],['pedestrian walking','person'],['football player','person'],['athlete','person'],['widow','person'],['funny face','person'],['boy','person'],['audience','person'],['hands on stomach','person'],['grandfather','person'],['clown','person'],['police','person'],['dead person','person'],['east asian ethnicity','person'],['australian culture','person'],['brazilian culture','culture'],['farm worker','person'],['mother mary','person'],['only girls','person'],['brown eyes','person'],['human toe','person'],['sole of foot','person'],['parent','person'],['thai flag','flag'],['vietnamese culture','culture'],['human eyes','person'],['making face','person'],['hair toss','person'],['human nose','person'],['one woman','person'],['canadian flag','flag'],['beauty treatment','person'],['people in the background','person'],['swiss flag','flag'],['adults only','person'],['cowboy','person'],['hungarian culture','culture'],['one baby girl only','person'],['human body parts','person'],['chinese ethnicity','person'],['colleague','person'],['hand on shoulder','person'],['dutch culture','culture'],['senior couple','person'],['attractive female','person'],['asian ethnicity','person'],['the human body','person'],['rainbow flag','flag'],['christ the redeemer','person'],['one people','person'],['dark haired','person'],['street musician','person'],['brunette','person'],['waist-up','person'],['irish culture','person'],['african ethnicity','person'],['grey hair','person'],['human knee','person'],['women','person'],['driver','person'],['human palm','person'],['hand gesture','person'],['one senior woman only','person'],['ganesha','person'],['hipster','person'],['dance','person'],['masculinity','person'],['japanese language','culture'],['people in a row','person'],['chinese language','culture'],['human teeth','person'],['worshipper','person'],['singer','person'],['carrying on shoulders','person'],['facial hair','person'],['one baby boy only','person'],['gray eyes','person'],['mediterranean culture','culture'],['hands covering mouth','person'],['scuba diver','person'],['scottish culture','person'],['indigenous culture','person'],['mixed race','person'],['swiss culture','culture'],['human leg','person'],['cambodian culture','person'],['bare foot','person'],['egyptian culture','person'],['couple','person'],['monk - religious occupation','person'],['middle eastern culture','person'],['east asian culture','person'],['three people','person'],['serene people','person'],['multi-ethnic group','person'],['unrecognizable people','person'],['english culture','person'],['young man','person'],['one teenage boy only','person'],['topless','person'],['toe','person'],['only boys','person'],['skeleton','person'],['moustache','person'],['turkish flag','flag'],['animal-face','face'],['animal-eye','eye'],['animal-mouth','mouth'],['italian flag','flag']]
 # conditional list
 conditional_list: [[['headshot','human','human face','one-person','person','man','men','woman','women','human representation'], ['animal representation', 'animal head', 'domestic-animals', 'domestic-animal', 'animal-family', 'farm-animal', 'wild-animal','two-animals','animal themes','animal','animals','chimpanzee','orangutan', 'dead-animal','monkey']]]
-logging_for_profiling: True
-db_for_predictions:
- use_db: True
- name_concept_list_table: 'getty-collection-v3'
- name_file_hash_mapping_table: 'v3'

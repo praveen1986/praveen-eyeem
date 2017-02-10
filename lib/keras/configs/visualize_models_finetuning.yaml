@@ -1,24 +1,19 @@
 title: fc_v3_test
-resize_test: False
-resize_images: True
+resize_test: True
 #percentage of subset of rare classes to consider for evaluation puporse
 percentate_of_classesFrEval: 2
-# # model name
+# model name
 model_name: inception_v3_finetune
 # model config file path
-model_config_file: '/nas2/praveen/home/rnd-libs/rnd_libs/models/keras/inception_v3_finetune.yaml'
-# model name
-# model_name: inception_v3_fc
-# # model config file path
-# model_config_file: '/nas2/praveen/home/rnd-libs/rnd_libs/models/keras/inception_v3_fc.yaml'
+model_config_file: '/nas2/praveen/home/rnd-libs/rnd_libs/models/keras/inception_v3_finetune_test.yaml'
 # loss function
 loss: 'categorical_crossentropy'
 # optimizer
 optimizer: 'rmsprop'
 # Learning rate
-lr: 0.1
+lr: 0.01
 beta: 10.0
-betas: [0.9,3.0,10.0,20.0]
+betas: [0.0]
 #betas: [0.0,0.1]
 #betas: [0.0]
 #scale_image: False
@@ -39,7 +34,7 @@ snapshot: 5000
 # snapshot_prefix location
 snapshot_dir: '/nas2/praveen/home/rnd-libs/results/snapshot/'
 # logging directory
-log_dir: /nas2/praveen/home/rnd-libs/results/logs
+log_dir: '/nas2/praveen/home/rnd-libs/results/logs'
 # prefix name:
 snapshot_prefix: 'snapshot'
 # maximum iteration
@@ -53,9 +48,11 @@ train_lmdb_keep: 64
 # lmdb keep to cache keep images in memory 
 val_lmdb_keep: 1024
 # Batch size
-batch_size: 25
+batch_size: 1
 # global threshold when to be used with precision below
 global_threshold: 0.80
+#Threshold file per class
+threshold_file: '/nas2/praveen/home/rnd-libs/rnd_libs/lib/keras/configs/thresholds.json'
 # Display results after display iterations
 display: 100
 # Measure of performance metric 'top-k accuracy', 'precision'
@@ -85,21 +82,21 @@ output_node_name:
 # train_file
 train_file_list: '/nas2/datasets/keywording/lists/keywording_data-v4-29-11-2016-train.txt'
 # train_file
-train_file: '/nas2/datasets/keywording/lmdb_files/getty-collection-v3-19-08-2016/train'
+train_file: '/nas2/praveen/home/rnd-libs/rnd_libs/lib/keras/keywording_test_images_labels'
 # # val_file:
 # val_file_list: '/nas/caffe_datasets/lists/getty-collection/getty-collection-v3-19-08-2016-val.txt'
 # # val_file:
 # val_file: '/nas/caffe_datasets/lmdb_files/getty-collection-v3-19-08-2016/val'
 # val_file:
-val_file_list: '/nas2/datasets/keywording/lists/keywording_data-v4-29-11-2016-val.txt'
+val_file_list: '/nas2/datasets/keywording/lists/keywording_data-v4-29-11-2016-test.txt'
 # val_file:
-val_file: '/nas2/datasets/keywording/lmdb_files/getty-collection-v3-19-08-2016/val'
+val_file: '/nas2/datasets/keywording/lmdb_files/getty-collection-v3-19-08-2016/test'
 # Square images before predictions
 square_crop: False
 # Overwrite predictions jsons
 force: True
 # results_dir
-results_dir: '/nas2/praveen/home/rnd-libs/results/predictions/v16_random_random/'
+results_dir: '/nas2/praveen/home/rnd-libs/results/predictions/v16_299_299/'
 # test file list
 test_file_list: '/nas2/datasets/keywording/lists/keywording_data-v4-29-11-2016-test.txt'
 #test_file: '/nas2/praveen/home/rnd-libs/rnd_libs/lib/keras/keywording_test_images_labels'
@@ -107,8 +104,7 @@ test_file: '/nas2/datasets/keywording/lmdb_files/getty-collection-v3-19-08-2016/
 # gt_dir
 gt_dir: '/data/datasets/getty-collection/getty-06-07-2015'
 # Label file
-#label_file: '/nas2/caffe_datasets/lists/getty-collection/getty-collection-v3-19-08-2016-label-info.npz'
-label_file: '/nas2/caffe_datasets/lists/getty-collection/getty-collection-v3-19-08-2016-label-info-fast.npz'
+label_file: '/nas/caffe_datasets/lists/getty-collection/getty-collection-v3-19-08-2016-label-info.npz'
 # Label sampling type : [ None, drop_out, mikolov, mikolov_drop_out, mikolov_original, mikolov_em_drop_out ]
 label_sampling: mikolov_drop_out
 # number of epocs

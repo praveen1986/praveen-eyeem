@@ -1,0 +1,63 @@
+# model name
+model_name: vgg16
+# model config file path
+model_config_file: /home/harsimrat/workspace/rnd-libs/eyelibs/models/keras/vgg_16.yaml
+# loss function
+loss: 'categorical_crossentropy'
+# Learning rate
+lr: 0.01
+# Momentum
+momentum: 0.9
+# Learning rate Decay
+decay: 0.0005
+# stepsize
+stepsize: 10000
+# Save snapshot after
+snapshot: 1000
+# snapshot_prefix location
+snapshot_dir: '/mnt/models/abstract_concepts/v2'
+# prefix name:
+snapshot_prefix: 'snapshot'
+# maximum iteration
+maximum_iteration: 1000000
+# Number of testing iterations 
+test_iter: 1000
+# Testing interval
+test_interval: 1000
+# lmdb keep to cache keep images in memory 
+train_lmdb_keep: 64
+# lmdb keep to cache keep images in memory 
+test_lmdb_keep: 1024
+# Batch size
+batch_size: 16
+# Display results after display iterations
+display: 100
+# Mean file
+mean_file: '/mnt/models/abstract_concepts/v2/mean.npy'
+# train_file
+train_file_list: '/mnt/caffe_datasets/lists/abstract_concepts/v2/train.txt'
+# train_file
+train_file: '/mnt/caffe_datasets/lmdb_files/abstract-concepts/v2/multi-label-train'
+# val_file:
+val_file_list: '/mnt/caffe_datasets/lists/abstract_concepts/v2/val.txt'
+# val_file:
+val_file: '/mnt/caffe_datasets/lmdb_files/abstract-concepts/v2/multi-label-val'
+# number of epocs
+nb_epocs: 1
+# show accuracy while training
+show_accuracy: 1
+# logging directory
+log_dir: /mnt/models/abstract_concepts/v2/logs
+# DEMO configs below
+# show top K concepts
+top_k: 5
+# demo synset file
+synset_file: /mnt/caffe_datasets/lists/abstract_concepts/v2/synset_words_all.txt
+# channel swap for images
+channel_swap: [2,1,0]
+# class_weight:
+class_weight: False
+# train_info
+train_info : ['model_name','model_config_file','loss','lr','train_file','val_file']
+# data augumentation
+data_augumentation: Trues

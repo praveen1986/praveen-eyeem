@@ -9,10 +9,7 @@ import keras
 import shutil
 import numpy as np
 from multiprocessing.pool import ThreadPool
-import cStringIO
-from PIL import Image
-import urlparse, urllib, StringIO
-import cv2
+from rnd_libs.lib.keras.loss_functions import _EPSILON
 pool = ThreadPool(processes=1)
 
 
@@ -26,7 +23,7 @@ class LogHistory(keras.callbacks.Callback):
         self.losses.append(logs.get('loss').tolist())
 
 
-class TheanoTrainer():
+class TheanoTrainerCaptions():
 
     def __init__(self, config_file, verbose):
 
@@ -62,161 +59,7 @@ class TheanoTrainer():
         self.all_labels = None
 
         self.save_configs()
-    def scale_image(self, image):
 
-            #
-            # caffe scales image 0-1 in pixel values we bring it back to 255 as keras likes it that way
-            #
-
-            # No more caffe no more scaling down to 0-1 in caffe
-            # image *= 255.0
-
-            #tstart = time.time()
-
-            if self.cfgs['square_crop']:
-                if self.verbose:
-                    self.io.print_info('Yo ! As you like it - Squaring up the image')
-                image = self.square_it_up(image)
-
-            # tend = time.time()
-
-            # tstart = time.time()
-
-            try:
-                if self.cfgs['resize_images']:
-                    image = cv2.resize(image, (self.im_h, self.im_w)).astype(np.float32)
-                else:
-                    print 'no resize'
-                    image=image.astype(np.float32)
-            except Exception as err:
-                self.io.print_error('Could not parse {0}'.format(e))
-                return None
-
-            # tend = time.time()
-
-            # tstart = time.time()
-
-            if self.mean_pixel_value is not None:
-                image -= self.mean_pixel_value
-
-            if self.pixel_scaling is not None:
-                image /= self.pixel_scaling
-
-            if self.channel_swap is not None:
-                image = image[:, :, self.channel_swap]
-
-            # H,W,C to C,H,W
-            if self.image_shuffle is not None:
-                image = image.transpose(self.image_shuffle)
-
-            #tend = time.time()
-
-            return image
-    def fetch_images(self, image_file_names):
-
-        images = []
-        basenames = []
-
-        #tstart = time.time()
-
-        for idx, image_file_name in enumerate(image_file_names):
-
-            image_file_name=image_file_name.replace('/nas/','/nas2/')
-            im_basename = os.path.basename(image_file_name)
-            im_basename, _ = os.path.splitext(im_basename)
-
-            if not urlparse.urlparse(image_file_name).scheme == "":
-
-                url_response = urllib.urlopen(image_file_name)
-
-                if url_response.code == 404:
-                    print self.io.print_error('[Training] URL error code : {1} for {0}'.format(image_file_name, url_response.code))
-                    continue
-
-                try:
-
-                    string_buffer = StringIO.StringIO(url_response.read())
-                    image = np.asarray(bytearray(string_buffer.read()), dtype="uint8")
-
-                    image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-                    image = image[:, :, (2, 1, 0)]
-                    image = image.astype(np.float32)
-
-                except Exception as err:
-
-                    print self.io.print_error('[Training] Error with URL {0} {1}'.format(image_file_name, err))
-                    continue
-
-            elif os.path.exists(image_file_name):
-
-                try:
-
-                    fid = open(image_file_name, 'r')
-                    stream = fid.read()
-                    fid.close()
-
-                    image = Image.open(cStringIO.StringIO(stream))
-                    image = np.array(image)
-                    image = image.astype(np.float32)
-
-                    # image = cv2.imread(image_file_name)
-                    # image = image[:, :, (2, 1, 0)]
-                    # image = image.astype(np.float32)
-
-                    if image.ndim == 2:
-                        image = image[:, :, np.newaxis]
-                        image = np.tile(image, (1, 1, 3))
-                    elif image.shape[2] == 4:
-                        image = image[:, :, :3]
-
-                except Exception as err:
-
-                    print self.io.print_error('[Training] Error with image file {0} {1}'.format(image_file_name, err))
-                    continue
-            else:
-
-                try:
-
-                    image = self.conn.read_image(image_file_name)
-
-                    if image is None:
-                        raise self.io.print_error("[Training] Image data could not be loaded - %s" % image_file_name)
-                        continue
-
-                    image = np.array(image)
-
-                    if image.ndim == 2:
-                        image = image[:, :, np.newaxis]
-                        image = np.tile(image, (1, 1, 3))
-                    elif image.shape[2] == 4:
-                        image = image[:, :, :3]
-
-                except Exception as err:
-
-                    print self.io.print_error('[Training] Error with S3 Bucket hash {0} {1}'.format(image_file_name, err))
-                    continue
-
-            # try : do or do not there is not try
-            #orig_image=image.astype('u1')
-            image = self.scale_image(image)
-
-            if image is None:
-                continue
-
-            if self.verbose:
-                self.io.print_info('Processing {0} {1}'.format(image_file_name, image.shape))
-
-            images.append(image)
-
-            basenames.append(im_basename)
-
-        #tend = time.time()
-
-        #self.io.print_info('Fetching {0} images took {1:.4f} secs'.format(len(image_file_names), tend - tstart))
-        if self.cfgs['resize_images']:
-            return np.array(images)
-        else:
-            return images
     def save_configs(self):
 
         try:
@@ -236,18 +79,6 @@ class TheanoTrainer():
         pfile = open(self.trainer_config_file)
         self.cfgs = yaml.load(pfile)
         pfile.close()
-    def see_model(self):
-        
-        self.trainer = model_dict[self.trainer_name]()
-        self.trainer.configure(self.model_config_file)
-
-        self.trainer.define()
-        self.load_mean_file()
-        self.im_h=779
-        self.im_w=779
-        self.load_synset_file()
-
-        self.trainer.compile(self.cfgs)
 
     def setup(self):
 
@@ -264,7 +95,6 @@ class TheanoTrainer():
         self.load_synset_file()
 
         self.setup_training_data()
-        
         self.setup_loss_function()
 
         if not self.trainer.init:
@@ -273,8 +103,6 @@ class TheanoTrainer():
             return
 
         self.io.print_info('{0} Model defined from {1}'.format(self.trainer_name, self.model_config_file))
-
-
         self.trainer.compile(self.cfgs)
         self.compile_inference()
 
@@ -294,15 +122,14 @@ class TheanoTrainer():
         """
 
         if self.model_type == 'Sequential':
-            self.inference = K.function([self.trainer.model.get_input(train=False)], [self.trainer.model.layers[-1].get_output(train=False)])
+            self.inference = K.function(self.trainer.model.get_input(train=False), [self.trainer.model.layers[-1].get_output(train=False)])
         elif self.model_type == 'Graph':
-            self.inference = K.function([self.trainer.model.get_input(train=False)], [self.trainer.model.nodes[node].get_output(train=False) for node in self.cfgs['output_node_name']['test']])
+            self.inference = K.function(self.trainer.model.get_input(train=False), [self.trainer.model.nodes[node].get_output(train=False) for node in self.cfgs['output_node_name']['test']])
         else:
             self.io.print_error('Say whaaaat ?! This model type is not supported : {}'.format(self.model_type))
             sel.init = False
 
         self.io.print_info('Inference model compiled')
-        
 
     def setup_training_data(self):
 
@@ -315,27 +142,10 @@ class TheanoTrainer():
             self.val_lmdb = LMDBParser(self.cfgs['val_file'], log_dir=self.cfgs['log_dir'])
 
         self.label_image_mapping = None
-        self.label_embedding = None
-        self.label_vectors = None
-
-        # if 'label_file' in self.cfgs.keys():
-        #     import ipdb; ipdb.set_trace()
-        #     self.label_image_mapping = self.io.read_npz_file(self.cfgs['label_file'], 'info').item()
-        #     #self.label_image_mapping =None
-        #     self.io.print_info('Read label/image lookup file {0}'.format(self.cfgs['label_file']))
 
         if 'label_file' in self.cfgs.keys():
-
-            images, mapping, vocab, vocab_mapping = self.io.read_npz_file(self.cfgs['label_file'], ['images', 'mapping', 'vocabulary', 'vocabulary_mapping'])
-
-            self.label_image_mapping = {'images': list(images), 'mapping': list(mapping), 'vocabulary': list(vocab), 'vocabulary_mapping': vocab_mapping.item()}
+            self.label_image_mapping = self.io.read_npz_file(self.cfgs['label_file'], 'info').item()
             self.io.print_info('Read label/image lookup file {0}'.format(self.cfgs['label_file']))
-
-        if 'label_embedding_file' in self.cfgs.keys():
-            self.label_embedding = self.io.read_npz_file(self.cfgs['label_embedding_file'], 'matrix')
-            self.label_vectors = self.io.read_npz_file(self.cfgs['label_embedding_file'], 'vectors')
-
-            self.io.print_info('Read label embedding file {0}'.format(self.cfgs['label_embedding_file']))
 
         self.train_lmdb.set_params((self.im_h, self.im_w),
                                    self.mean_pixel_value,
@@ -345,8 +155,7 @@ class TheanoTrainer():
                                    self.cfgs['label_sampling'],
                                    self.concepts,
                                    self.label_image_mapping,
-                                   image_shuffle=self.image_shuffle,
-                                   label_embedding=self.label_embedding)
+                                   image_shuffle=self.image_shuffle)
 
         self.val_lmdb.set_params((self.im_h, self.im_w),
                                  self.mean_pixel_value,
@@ -356,8 +165,7 @@ class TheanoTrainer():
                                  'None',
                                  self.concepts,
                                  None,
-                                 image_shuffle=self.image_shuffle,
-                                 label_embedding=self.label_embedding)
+                                 image_shuffle=self.image_shuffle)
 
         if 'captions' in self.cfgs['model_name']:
             self.train_lmdb.set_captions_params(self.trainer.LUT,
@@ -424,7 +232,7 @@ class TheanoTrainer():
             self.io.print_info('Learning rate updated for snapshot {},{}'.format(model_name, lr_rates))
         else:
             start_iter = -1
-        #import ipdb; ipdb.set_trace()
+
         for n_iter in range(start_iter + 1, self.cfgs['maximum_iteration']):
 
             self.io.print_info('At iteration {0} of {1}'.format(n_iter, self.cfgs['maximum_iteration']))
@@ -432,22 +240,13 @@ class TheanoTrainer():
             if n_iter % self.cfgs['stepsize'] == 0 and not n_iter == 0:
                 self.update_lr()
 
-            file_names, images, labels_train, labels_test = self.train_lmdb.get_batch[self.cfgs['label_sampling']]()
-            
-            orig_images=self.fetch_images(file_names)
+            _, images, partial_captions, next_words = self.train_lmdb.get_batch[self.cfgs['label_sampling']]()
 
             train_logs = LogHistory()
 
             try:
-                # if self.cfgs['resize_images'] == False:
-                #     for img,lab_train in zip(orig_images,labels_train):
-                #         self.fit([img], [lab_train], batch_size=self.cfgs['batch_size'], nb_epoch=self.cfgs['nb_epocs'], callbacks=[train_logs], verbose=1)
 
-                # else:
-                
-                self.fit(orig_images, labels_train, batch_size=self.cfgs['batch_size'], nb_epoch=self.cfgs['nb_epocs'], callbacks=[train_logs], verbose=1)
-
-                self.eval(n_iter, orig_images, labels_test)
+                self.fit([images, partial_captions], next_words, batch_size=self.cfgs['batch_size'], nb_epoch=self.cfgs['nb_epocs'], callbacks=[train_logs], verbose=1)
 
             except Exception as e:
 
@@ -497,7 +296,7 @@ class TheanoTrainer():
         else:
             start_iter = -1
 
-        _, images, labels_train, labels_test = self.train_lmdb.get_batch[self.cfgs['label_sampling']]()
+        _, images, partial_captions, next_words = self.train_lmdb.get_batch[self.cfgs['label_sampling']]()
 
         for n_iter in range(start_iter + 1, self.cfgs['maximum_iteration']):
 
@@ -513,12 +312,12 @@ class TheanoTrainer():
             try:
 
                 t1 = time()
-                self.fit(images, labels_train, batch_size=self.cfgs['batch_size'], nb_epoch=self.cfgs['nb_epocs'], callbacks=[train_logs], verbose=1)
+                self.fit([images, partial_captions], next_words, batch_size=self.cfgs['batch_size'], nb_epoch=self.cfgs['nb_epocs'], callbacks=[train_logs], verbose=1)
                 t2 = time() - t1
                 if self.cfgs['logging_for_profiling'] is True:
                     self.io.print_info('fit took {}s'.format(round(t2, 2)))
                 t1 = time()
-                self.eval(n_iter, images, labels_test)
+                self.eval(n_iter, [images, partial_captions], next_words)
                 t2 = time() - t1
                 if self.cfgs['logging_for_profiling']:
                     self.io.print_info('eval took {}s'.format(round(t2, 2)))
@@ -544,7 +343,7 @@ class TheanoTrainer():
                 self.io.print_info('[LR] update : last lr {}, current lr {}'.format(last_lr, current_lr))
 
             t1 = time()
-            _, images, labels_train, labels_test = async_result.get()
+            _, images, partial_captions, next_words = async_result.get()
 
             t2 = time() - t1
             if self.cfgs['logging_for_profiling']:
@@ -552,71 +351,32 @@ class TheanoTrainer():
 
         self.close_lmdbs()
 
-    def fit(self, images, labels, **kwargs):
+    def fit(self, input, output, **kwargs):
 
         if self.model_type == 'Sequential':
-            self.trainer.model.fit(images, labels, **kwargs)
+            self.trainer.model.fit(input, output, **kwargs)
         elif self.model_type == 'Graph':
-            self.trainer.model.fit({'input': images, 'output': labels}, **kwargs)
+            self.trainer.model.fit({'input': input, 'output': output}, **kwargs)
         else:
             self.io.print_error('Say whaaaat ?! This model type is not supported : {}'.format(self.model_type))
 
-    def eval(self, n_iter, images, labels, tag='TRAIN'):
+    def eval(self, n_iter, input, output, tag='TRAIN'):
 
-        img_batches = [images[i:i + self.cfgs['batch_size']] for i in range(0, len(images), self.cfgs['batch_size'])]
-        img_labels = [labels[i:i + self.cfgs['batch_size']] for i in range(0, len(labels), self.cfgs['batch_size'])]
+        # NOTE : This is loss not accuracy
 
-        acc = 0.0
+        pred = self.inference(input)[0]
 
-        for img, lab in zip(img_batches, img_labels):
+        pred /= pred.sum(axis=-1, keepdims=True)
 
-            (pred, feat) = self.inference([img])
+        # avoid numerical instability with _EPSILON clipping
+        pred = np.clip(pred, _EPSILON, 1.0 - _EPSILON)
 
-            """
-            if self.model_type == 'Sequential':
-                pred = self.trainer.model.predict(img)
-            elif self.model_type == 'Graph':
-                pred = self.trainer.model.predict({'input':img})[self.cfgs['output_node_name']['train']]
-            else:
-                self.io.print_error('Say whaaaat ?! This model type is not supported : {}'.format(self.model_type))
-            #if
-            """
-
-            acc += self.compute_accuracy(pred, lab)
-
-        acc /= len(img_batches)
-
-        self.io.print_info('{3} At {0} n_iter {2} {1}'.format(n_iter, acc, self.cfgs['metric'], tag))
-
-    def compute_accuracy(self, predictions, gt):
-
-        if self.label_vectors is not None:
-            # Need for L2 normalization of predictions and if need self.label_vectors
-            predictions /= np.linalg.norm(predictions, axis=1)[:, np.newaxis]
-            predictions = np.dot(predictions, self.label_vectors)
-
-        pred_labels = np.zeros(predictions.shape)
-
-        if self.cfgs['metric'] in ['precision']:
-
-            pred_labels[np.where(predictions > self.cfgs['global_threshold'])] = 1.0
-
-        elif self.cfgs['metric'] in ['top-k accuracy']:
-
-            good_labels = np.argsort(-predictions, axis=1)[:, :self.cfgs['top_k']['train']]
-
-            for idx in range(pred_labels.shape[0]):
-                pred_labels[idx, good_labels[idx]] = 1
-
+        if 'pn' in self.cfgs['loss']:
+            val_loss = - np.sum(np.sum(output * np.log(pred) + (1 - output) * np.log(1 - pred), axis=-1), axis=-1)
         else:
+            val_loss = - np.sum(np.sum(output * np.log(pred), axis=-1), axis=-1)
 
-            self.io.print_warning('Accuracy not set for {0}'.format(self.cfgs['loss']))
-            return 0.0
-
-        g = pred_labels * gt + 0.0
-        acc = np.nan_to_num(g.sum(axis=1) / (pred_labels.sum(axis=1))).mean()
-
-        return acc
+        self.io.print_info('{2} At {0} n_iter {1}'.format(n_iter, np.mean(val_loss), tag))
 
     def update_lr(self):
 
@@ -685,22 +445,12 @@ class TheanoTrainer():
         self.io.print_info('Wrote snapshot to {0}'.format(weights_file))
 
     def run_validation(self, n_iter):
-        
+
         self.io.print_info('Running validation')
 
-        keys, val_images, _, val_labels = self.val_lmdb.get_batch['None']()
+        _, val_images, val_partial_captions, val_next_words = self.val_lmdb.get_batch['captions']()
 
-        """
-        if self.model_type == 'Sequential':
-            val_logs = self.trainer.model.evaluate(val_images, val_labels, batch_size=1)
-        elif self.model_type == 'Graph':
-            val_logs = self.trainer.model.evaluate({'input':val_images,self.cfgs['output_node_name']['train']:val_labels}, batch_size=1)
-        else:
-            self.io.print_error('Say whaaaat ?! This model type is not supported : {}'.format(self.model_type))
-        #if
-        """
-
-        self.eval(n_iter, val_images, val_labels, tag='VALIDATION')
+        self.eval(n_iter, [val_images, val_partial_captions], val_next_words, tag='VALIDATION')
 
         self.io.print_info('End of validation')
 
