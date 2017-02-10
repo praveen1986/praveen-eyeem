@@ -1,0 +1,93 @@
+# YAML file configuration of label embedding code
+
+# synset file leaf labels files
+path_wn_labels_file: /mnt/caffe_datasets/lists/v9/synset_words.txt
+# Hedging bets file (for reading class names) we use bet file instead of synset words file since we might move to including internal nodes as well 
+path_bet_file : /mnt/deliverables/v9/deeplearning_models_v9.2/hedger.pickle
+# getty labels file
+path_getty_label_file : /mnt/datasets/getty-wn-alignment/20150929_getty_keywords.csv
+# training method ( CFM closed form or SGD or CCA or WSABIE)
+train_method : CFM_PC
+# decomposition of embedding matrix, set to None if not used
+decomposition: None
+# training image lists
+path_file_list : 
+ train : /mnt/caffe_datasets/lists/getty-collection/getty-collection-19-10-2015-train.txt
+ val : /mnt/caffe_datasets/lists/getty-collection/getty-collection-19-10-2015-val.txt
+ test : /mnt/caffe_datasets/lists/getty-collection/getty-collection-19-10-2015-val.txt
+# dense predictions locations from DL
+path_dense_pred_loc :
+ train : /mnt/predictions/getty-collection/getty-14-07-2015/concrete-v9.2
+ val : /mnt/predictions/getty-collection/getty-14-07-2015/concrete-v9.2
+ test : /mnt/predictions/getty-collection/getty-14-07-2015/concrete-v9.2
+# getty labels locations
+path_getty_labels_loc :
+ train : /data/datasets/getty-collection/getty-06-07-2015
+ val : /data/datasets/getty-collection/getty-06-07-2015
+ test : /data/datasets/getty-collection/getty-06-07-2015
+# processed vectors loc
+path_processed_vectors : 
+ train : /mnt/predictions/getty-collection/getty-13-10-2015-7k-vocab-V9.2
+ val : /mnt/predictions/getty-collection/getty-13-10-2015-7k-vocab-V9.2
+ test : /mnt/predictions/getty-collection/getty-13-10-2015-7k-vocab-V9.2
+# path training vectors npz files:
+npz_files_loc :
+ #weights : /mnt/models/label-embedding-v2.0/label_embeddings.npz
+ weights : /nas/models/clp/v2/20160802.npz
+ #thresholds : /mnt/models/label-embedding-v2.0/label_embeddings_threshold.npz
+ thresholds : /nas/models/clp/v2/20160802_thresholds.npz
+path_results_dir:
+ test: /nas/predictions/imagga-collection/getty-like-13-01-2016
+# Normalization of vectors
+normalization:
+ getty_norm: None
+ wn_norm: L2
+# regularization paramter for learning the embedding
+lambda : [0.1,1.0,10.0,100.0,1000.0]
+# logging directory
+path_logging_dir : /mnt/models/label-embedding-v2.0/logs
+# wn predictions suffix
+wn_suffix: '.pk'
+# getty labels suffix
+getty_suffix: '.json'
+# daata rebalancing :
+balance_data: True
+# max_samples for rebalancing
+max_samples_balance: 1000
+# getty top k
+getty_stop_list: 25
+# getty keyword types : set to all if you wanna accept all keywords
+getty_key_words_types: ['all']
+# path weight matrix file
+path_weight_matrix: /mnt/models/label-embedding-v2.0/getty-collection-14-10-2015-train-v11-7k
+# top K tags to keep
+top_k_tags: 15
+# concept precision
+concept_precision: 0.85
+# minimum samples for validation
+minimum_samples_for_validation: 50
+# show predidcted labels
+show_predicted_labels: False
+# train snap shot weight matrix saving
+snap_shot_w: 10
+# classifier type
+classifier_type: 'sgd_svm'
+# feature normazation
+normalization_type: 'None'
+# feature scaling
+scaling_type: 'None'
+# experted dimentions of the features
+#expected_dim: 37632
+expected_dim: 2955
+# SGD 
+sgd_loss: log
+# use_global_threshold:
+use_global_threshold: True
+# getty antonym list
+antonym_list: [['indoors','outdoors'],['day','night'],['no people','one person'],['no people','real people'],['alone','togetherness'],['people','animals'],['no people','men'],['no people','women'],['two people','no people'],['fog','clear sky'],['young men','young women'],['looking at camera','looking away'],['healthy eating','unhealthy eating'],['men','women']]
+# getty people count list
+count_order_list: [[ 'large group of people' , 'medium group of people', 'group of people', 'beautiful people' , 'incidental people' , 'adult', 'men', 'women' , 'teenagers','real people'],['five people'],['four people'],['three people'],['two people'],['boy', 'man', 'woman', 'girl',  'one person', 'woman', 'man', 'beautiful woman', 'one boy only', 'one girl only', 'one mature man only', 'one mature woman only', 'one mid adult only', 'teenage boy', 'teenage girl',  'teenager',  'one mid adult woman only', 'one parent' , 'one teenage girl only', 'one teenage boy only' , 'one person only']]
+# stop list of sensitive concepts
+stop_list_lemb: ['male likeness', 'female likeness', 'female animal', 'animal neck', 'animal leg' , 'animal face' , 'animal mouth' , 'female animal' , 'jesus christ' , 'generic location', 'animal part' , 'domestic animal' , 'head cocked' , 'uk' , 'asia' , 'religious equipment' , 'animal imitation']
+# mapping list
+lemb_mapping_list: [['caucasian ethnicity', 'person'],['christianity', 'religion'],['catholicism','religion'],['caucasian','person'],['asian and indian ethnicities', 'person'],['buddhism', 'religion'],['adult animal', 'animal'],['italian culture', 'culture'],['chinese culture', 'culture'], ['german culture', 'culture'],['japanese culture', 'culture'],['french culture', 'culture'],['indian culture', 'culture'],['american culture', 'cultur'],['minaret', 'religion'],['british culture', 'culture'],['indian ethnicity', 'person'],['hinduism', 'religion'],['indonesian culture', 'culture'],['african-american ethnicity', 'person'],['thai culture', 'culture'],['single parent', 'person'],['asian', 'person'],['ancient egyptian culture', 'culture'],['greek culture', 'culture'],['european culture', 'culture'],['russian culture', 'culture'],['spain', 'culture'],['chinese ethnicity', 'person'],['east asian ethnicity', 'person'],['french flag','flag']]
