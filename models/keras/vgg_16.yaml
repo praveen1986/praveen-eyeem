@@ -1,0 +1,26 @@
+# pre-trained weights file, can be a keras hdf5 model or .caffemodel
+model_weights_file: /mnt/models/keras/vgg16_weights.hdf5
+# ignore these layer types while loading
+ignore_while_loading: ['Dense']
+# For using full image for training
+border_mode: 'same'
+# convolutional layer init
+conv_init: he_normal
+# Fully connected layer initialization
+fc_init: 'glorot_uniform'
+# Number of outputs
+nb_classes: 5220
+# scaling applied to activations
+activation: 'sigmoid'
+# non linearity applied to scale outputs
+conv_non_linearity: 'relu'
+# non linearity applied to scale outputs
+fc_non_linearity: 'relu'
+# number of image channels
+n_channels: 3
+# image width
+image_width: 224
+# image height
+image_height: 224
+# drop out rate 
+drop_out: 0.5

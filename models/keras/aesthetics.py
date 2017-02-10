@@ -19,22 +19,18 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2
 
 from rnd_libs.lib.label_embedding.embedding_io import EmbeddingIO
 from rnd_libs.lib.keras.loss_functions import ObjectiveFunctions
-from rnd_libs.lib.keras.custom_keras_layers import power_mean_Layer,global_Average_Pooling
-from rnd_libs.lib.keras.custom_utils import random_float
-from IPython.core.debugger import Tracer
+
 layer_dict = {'Convolution2D': Convolution2D,
 							'ZeroPadding2D': ZeroPadding2D,
 							'MaxPooling2D':MaxPooling2D,
+							'AveragePooling2D':AveragePooling2D,
 							'BatchNormalization':BatchNormalization,
 							'Activation': Activation}
 
 pooling_dict = {'max':MaxPooling2D,'average':AveragePooling2D}
 optimizer_dict = {'sgd':SGD,'rmsprop':RMSprop, 'adam':Adam}
 
-
-
-
-class InceptionV3_finetune():
+class Aesthetics():
 
 	def __init__(self):
 
@@ -43,8 +39,6 @@ class InceptionV3_finetune():
 		self.io = EmbeddingIO(None)
 		self.init = False
 		self.cfgs = None
-		self.loss_functions = ObjectiveFunctions()
-		
 
 	#def
 
@@ -61,9 +55,8 @@ class InceptionV3_finetune():
 
 		pfile = open(self.config_file,'r')
 		self.cfgs = yaml.load(pfile)
-		self.betas=random_float(0,20,self.cfgs['n_channels_partClassifiers'])
 		pfile.close()
-		#Tracer()()
+
 		self.init = True
 
 	#def
@@ -96,7 +89,7 @@ class InceptionV3_finetune():
 
 		# CONV with linear activation by default
 		layer_name = layer_name + '_conv'
-		self.add_to_graph(Convolution2D(*args, border_mode='valid', **kwargs), name=layer_name, input=input_layer)
+		self.add_to_graph(Convolution2D(*args, **kwargs), name=layer_name, input=input_layer)
 
 		# Batch normalization added directly on output of a linear layer
 		input_layer = layer_name
@@ -110,7 +103,22 @@ class InceptionV3_finetune():
 
 		return layer_name
 
-	#def
+	def add_inceptionF(self, input_layer, list_nb_filter, base_name):
+
+		tower_1_1 = self.add_bn_conv_layer(name=base_name+'tower_1_1', input=input_layer, nb_filter=list_nb_filter[0], nb_row=1, nb_col=1)
+
+		tower_2_1 = self.add_bn_conv_layer(name=base_name+'tower_2_1', input=input_layer, nb_filter=list_nb_filter[1], nb_row=1, nb_col=1)
+		tower_2_2 = self.add_bn_conv_layer(name=base_name+'tower_2_2', input=tower_2_1, nb_filter=list_nb_filter[2], nb_row=3, nb_col=3)
+
+		tower_3_1 = self.add_bn_conv_layer(name=base_name+'tower_3_1', input=input_layer, nb_filter=list_nb_filter[3], nb_row=1, nb_col=1)
+		tower_3_2 = self.add_bn_conv_layer(name=base_name+'tower_3_2', input=tower_3_1, nb_filter=list_nb_filter[4], nb_row=5, nb_col=5)
+
+		tower_4_1 = self.add_to_graph(MaxPooling2D((3, 3), strides=(1, 1), border_mode='same'), name=base_name+'tower_4_1', input=input_layer)
+		tower_4_2 = self.add_bn_conv_layer(name=base_name+'tower_4_2', input=tower_4_1, nb_filter=list_nb_filter[5], nb_row=1, nb_col=1)
+
+		self.add_to_graph(Activation("linear"), name=base_name, inputs=[tower_1_1,tower_2_2,tower_3_2,tower_4_2], merge_mode="concat", concat_axis=1)
+
+		self.io.print_info('Added Inception {0}'.format(base_name))
 
 	def add_inceptionA(self, input_layer, list_nb_filter, base_name):
 
@@ -211,12 +219,11 @@ class InceptionV3_finetune():
 		# https://github.com/fchollet/keras/issues/391
 
 	def define(self):
-		
+
 		try:
 
 			self.model = Graph()
-			#self.model.add_input(name='input',  input_shape=(self.cfgs['n_channels'], self.cfgs['image_height'], self.cfgs['image_width']))
-			self.model.add_input(name='input',  input_shape=(self.cfgs['n_channels'], None, None))
+			self.model.add_input(name='input',  input_shape=(self.cfgs['n_channels'], self.cfgs['image_height'], self.cfgs['image_width']))
 
 			#
 			# Part of the network which is defined in the config file should move here
@@ -236,91 +243,41 @@ class InceptionV3_finetune():
 
 			#for
 
-			self.add_inceptionA(input_layer=self.last_added_node, list_nb_filter=((64,), (48, 64), (64, 96, 96), (32,)), base_name='mixed')
+			self.add_inceptionA(input_layer=self.last_added_node, list_nb_filter=((64,), (48, 64), (64, 96, 96), (32,)), base_name='mixed_0')
 			self.add_inceptionA(input_layer=self.last_added_node, list_nb_filter=((64,), (48, 64), (64, 96, 96), (64,)),  base_name='mixed_1')
 			self.add_inceptionA(input_layer=self.last_added_node, list_nb_filter=((64,), (48, 64), (64, 96, 96), (64,)), base_name='mixed_2')
 
-			self.add_inceptionB(input_layer=self.last_added_node, list_nb_filter=((384,), (64, 96, 96)), base_name='mixed_3')
+			self.add_to_graph(layer_dict[self.cfgs['pooling_type']](pool_size=(self.cfgs['pooling_kernel_size'],self.cfgs['pooling_kernel_size'])), name='mixed_pool_0', input='mixed_0')
+			self.io.print_info('Added {1}:{0}'.format(self.cfgs['pooling_type'],self.last_added_node))
 
-			self.add_inceptionC(input_layer=self.last_added_node, list_nb_filter=((192,), (128, 128, 192), (128, 128, 128, 128, 192), (192,)), base_name='mixed_4')
-			self.add_inceptionC(input_layer=self.last_added_node, list_nb_filter=((192,), (160, 160, 192), (160, 160, 160, 160, 192), (192,)), base_name='mixed_5')
-			self.add_inceptionC(input_layer=self.last_added_node, list_nb_filter=((192,), (160, 160, 192), (160, 160, 160, 160, 192), (192,)), base_name='mixed_6')
-			self.add_inceptionC(input_layer=self.last_added_node, list_nb_filter=((192,), (192, 192, 192), (192, 192, 192, 192, 192), (192,)), base_name='mixed_7')
+			self.add_to_graph(layer_dict[self.cfgs['pooling_type']](pool_size=(self.cfgs['pooling_kernel_size'],self.cfgs['pooling_kernel_size'])), name='mixed_pool_1', input='mixed_1')
+			self.io.print_info('Added {1}:{0}'.format(self.cfgs['pooling_type'],self.last_added_node))
 
-			self.add_inceptionD(input_layer=self.last_added_node, list_nb_filter=((192, 320), (192, 192, 192, 192)), base_name='mixed_8')
+			self.add_to_graph(layer_dict[self.cfgs['pooling_type']](pool_size=(self.cfgs['pooling_kernel_size'],self.cfgs['pooling_kernel_size'])), name='mixed_pool_2', input='mixed_2')
+			self.io.print_info('Added {1}:{0}'.format(self.cfgs['pooling_type'],self.last_added_node))
 
-			self.add_inceptionE(input_layer=self.last_added_node, list_nb_filter=((320,), (384, 384, 384), (448, 384, 384, 384), (192,)), pool_mode='average', base_name='mixed_9')
-			self.add_inceptionE(input_layer=self.last_added_node, list_nb_filter=((320,), (384, 384, 384), (448, 384, 384, 384), (192,)), pool_mode='max', base_name='mixed_10')
-
-			#self.add_to_graph(AveragePooling2D(pool_size=(5,5)), name='pool3', input=self.last_added_node)
-			#self.io.print_info('Added {1}:{0}'.format('AveragePooling',self.last_added_node))
-
-			"""
-			self.add_to_graph(Flatten(), name='flatten', input='pool3')
-			self.io.print_info('Added {1}:{0}'.format('Flatten',self.last_added_node))
-
-			self.add_to_graph(Dense(self.cfgs['nb_classes']), name='softmax', input='flatten')
+			self.add_to_graph(Flatten(), name='mixed_flatten_0', input='mixed_pool_0')
+			self.add_to_graph(Dense(self.cfgs['nb_dense'], activation=self.cfgs['fc_non_linearity']), name='mixed_dense_0', input='mixed_flatten_0')
 			self.io.print_info('Added {1}:{0}'.format('Dense',self.last_added_node))
-			"""
-			#print 'Adding finetuning layers'---------------------------------------------------------------------------------------
 
+			self.add_to_graph(Flatten(), name='mixed_flatten_1', input='mixed_pool_1')
+			self.add_to_graph(Dense(self.cfgs['nb_dense'], activation=self.cfgs['fc_non_linearity']), name='mixed_dense_1', input='mixed_flatten_1')
+			self.io.print_info('Added {1}:{0}'.format('Dense',self.last_added_node))
 
-			self.add_to_graph(BatchNormalization(mode=0, epsilon=0.0001, axis=1),name='batchnorm',input=self.last_added_node)
-			self.io.print_info('Added {1}:{0}'.format('BatchNormalization before finetuning',self.last_added_node))
+			self.add_to_graph(Flatten(), name='mixed_flatten_2', input='mixed_pool_2')
+			self.add_to_graph(Dense(self.cfgs['nb_dense'], activation=self.cfgs['fc_non_linearity']), name='mixed_dense_2', input='mixed_flatten_2')
+			self.io.print_info('Added {1}:{0}'.format('Dense',self.last_added_node))
 
-			self.add_to_graph(Convolution2D(self.cfgs['n_channels_partClassifiers'],1,1),name='partClassifiers',input=self.last_added_node)
-			self.io.print_info('Added {1}:{0}'.format('partClassifiers',self.last_added_node))
-			
+			self.add_to_graph(Activation("linear"), name='concat_0', inputs=['mixed_dense_0', 'mixed_dense_1', 'mixed_dense_2'], merge_mode="concat", concat_axis=1)
 
-			self.add_to_graph(Activation('relu'),name='relu_on_partClassifiers',input=self.last_added_node)
-			self.io.print_info('Added {1}:{0}'.format('ReLu on partClassifiers',self.last_added_node))			
+			_ = self.add_to_graph(BatchNormalization(mode=0, epsilon=0.0001, axis=1), name='bn_norm_concat_0', input='concat_0')
+			self.add_to_graph(Activation(self.cfgs['concat_non_linearity']), name='bn_concat_0_nonlin', input='bn_norm_concat_0', merge_mode="concat", concat_axis=1)
 
-			if self.cfgs['pooling_AtfineTuning']=='avg':
-				self.add_to_graph(global_Average_Pooling(), name='custom_pool', input=self.last_added_node)
-				self.io.print_info('Added {1}:{0}'.format('Custom Pooling Layer:'+self.cfgs['pooling_AtfineTuning'],self.last_added_node))
-			elif self.cfgs['pooling_AtfineTuning']=='softpool':
-				self.add_to_graph(power_mean_Layer(self.betas), name='custom_pool', input=self.last_added_node)   # Learnable
-				self.io.print_info('Added {1}:{0}'.format('Custom Pooling Layer:'+self.cfgs['pooling_AtfineTuning'],self.last_added_node))
+			self.add_to_graph(Dense(self.cfgs['nb_classes'], activation=self.cfgs['activation']), name='aesthetics', input='bn_concat_0_nonlin')
+			self.model.add_output(name='output', input='aesthetics')
 
-			
-
-			self.add_to_graph(Flatten(), name='flatten', input=self.last_added_node)
-			self.io.print_info('Added {1}:{0}'.format('Flatten',self.last_added_node))
-
-			self.add_to_graph(Dense(self.cfgs['nb_classes']),name='softmax',input=self.last_added_node) #Learnable
-			self.io.print_info('Added {1}:{0}'.format('Softmax-dense weights',self.last_added_node))
-
-			self.add_to_graph(Activation(self.cfgs['activation']), name='prob', input=self.last_added_node)
-			self.io.print_info('Added {1}:{0}'.format('Activation',self.last_added_node))
-
-			#Harsimrat original architecture ---------------------------------------------------------------------------------------
-			
-			# self.add_to_graph(AveragePooling2D(pool_size=(5,5)), name='pool3', input=self.last_added_node)
-			# self.io.print_info('Added {1}:{0}'.format('AveragePooling',self.last_added_node))
-
-			# """
-			# self.add_to_graph(Flatten(), name='flatten', input='pool3')
-			# self.io.print_info('Added {1}:{0}'.format('Flatten',self.last_added_node))
-			# self.add_to_graph(Dense(self.cfgs['nb_classes']), name='softmax', input='flatten')
-			# self.io.print_info('Added {1}:{0}'.format('Dense',self.last_added_node))
-			# """
-
-			# self.add_to_graph(Convolution2D(self.cfgs['nb_classes'],1,1),name='softmax',input='pool3')
-
-			# self.add_to_graph(Activation(self.cfgs['activation']), name='prob', input='softmax')
-
-
-
-
-			#Adding dense finetunning layers
-#Re
-			# Output to the Graph
-			self.model.add_output(name='output', input='prob')
-			#Tracer()()
-			if not self.cfgs['model_weights_file'] == 'None':
-				#import ipdb; ipdb.set_trace()
+			if not self.cfgs['model_weights_file'] == None:
 				self.init_from_this()
-				#import ipdb; ipdb.set_trace()
 			#if
 
 		except Exception as err:
@@ -338,7 +295,7 @@ class InceptionV3_finetune():
 	def init_from_this(self):
 
 		weights_file = self.cfgs['model_weights_file']
-		#Tracer()()
+
 		if not weights_file == 'None':
 			self.load_weights(weights_file)
 			self.io.print_info('Weights Initalized from {0}'.format(weights_file))
@@ -347,12 +304,11 @@ class InceptionV3_finetune():
 	#def
 
 	def load_weights(self, filepath):
-		
-		#Tracer()()
+
 		if filepath.endswith('.npz'):
 			pfile = open(filepath,'r')
 			graph = np.load(pfile)['graph'].item()
-			
+
 			for node_name,weights in graph.items():
 
 				if node_name in self.cfgs['ignore_while_loading']:
@@ -366,58 +322,19 @@ class InceptionV3_finetune():
 			#for
 
 			pfile.close()
-		elif filepath.endswith('.npy'):
-			pfile = open(filepath,'r')
-			graph = np.load(pfile).item()
-			
-			for node_name,weights in graph.items():
 
-				if node_name in self.cfgs['ignore_while_loading']:
-					self.io.print_warning('Ignoring weights from {0}'.format(node_name))
-					continue
-				#if
-
-				self.io.print_info('Transfering parameters from {0}'.format(node_name))
-				self.model.nodes[node_name].set_weights(weights)
-
-			#for
-
-			pfile.close()
 		elif filepath.endswith('.hdf5'):
-
 			self.model.load_weights(filepath)
+			self.io.print_info('Ported weights from : {}'.format(filepath))
 		else:
 			self.io.print_error('Unknown model weights file {}'.format(filepath))
 		#if
 
-		self.io.print_info(self.model.nodes['softmax'].get_config())
-
-	#def
-
-	def setup_loss_function(self,w):
-
-		self.loss_functions.set_weights(w)
-
-	#def
-
 	def compile(self,compile_cfgs):
 
 		try:
-
-			#opt = optimizer_dict[compile_cfgs['optimizer']](lr=compile_cfgs['lr'], epsilon=compile_cfgs['epsilon'])
-			opt = SGD(lr=compile_cfgs['lr'])
-			#model_layer = dict([(ler.name, layer) for layer in self.model.layesrs])
-			
-			for layer_name,model_layer in self.model.nodes.items():
-				if layer_name not in self.cfgs['trainable_layers']:
-					model_layer.trainable=False
-				else:
-					self.io.print_info('Trainable Layer: {0}'.format(layer_name))
-
-
-
-			self.model.compile(loss={'output':self.loss_functions.dict[compile_cfgs['loss']]}, optimizer=opt)
-			
+			opt = optimizer_dict[compile_cfgs['optimizer']](lr=compile_cfgs['lr'], epsilon=compile_cfgs['epsilon'])
+			self.model.compile(loss={'output':loss_functions_dict[compile_cfgs['loss']]}, optimizer=opt)
 		except Exception as e:
 			self.io.print_error('Error configuring the model, {0}'.format(e))
 			self.init = False
@@ -425,8 +342,5 @@ class InceptionV3_finetune():
 		#try
 
 		self.init = True
-
-	def get_model(self):
-		return self.model
 
 	#def

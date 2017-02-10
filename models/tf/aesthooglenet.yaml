@@ -1,0 +1,20 @@
+# pre-trained weights file, should be a npy file with dictionary keys to weights 
+model_weights_file: /nas/models/googlenet/googlenet.npy
+# ignore these layer types while loading
+ignore_while_loading: ['loss3_classifier']
+# Node to feed to loss function
+optimization_node: 'loss3_classifier'
+# Node to feed to evaluation
+prediction_node: 'prob'
+# Number of outputs
+nb_classes: 4
+# scaling applied to activations
+activation: 'softmax'
+# number of image channels
+n_channels: 3
+# image width
+image_width: 224
+# image height
+image_height: 224
+# dropout rates
+drop_out: 0.5

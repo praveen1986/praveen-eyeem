@@ -1,0 +1,22 @@
+# Model weights file
+model_weights_file: /nas/models/alexnet/bvlc_alexnet.npz
+# Ignore these nodes
+ignore_nodes: []
+# Number of outputs
+n_bits: 128
+# image format for training
+n_channels: 3
+# image width
+image_width: 227
+# image height
+image_height: 227
+# drop out rate 
+drop_out: 0.5
+# activation of word embeddings
+activation: sigmoid
+# initialization of word embeddings
+fc_init: glorot_uniform
+# convolution layer non-linearity
+conv_non_linearity: relu
+# Fully connected layer non-linearity
+fc_non_linearity: relu

@@ -1,5 +1,3 @@
-# https://groups.google.com/forum/#!topic/keras-users/rRdL01zGKi4
-#https://github.com/Lasagne/Recipes/blob/master/modelzoo/inception_v3.py
 
 # https://github.com/fchollet/keras/issues/1321#issuecomment-166576492
 
@@ -19,9 +17,7 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2
 
 from rnd_libs.lib.label_embedding.embedding_io import EmbeddingIO
 from rnd_libs.lib.keras.loss_functions import ObjectiveFunctions
-from rnd_libs.lib.keras.custom_keras_layers import power_mean_Layer,global_Average_Pooling
-from rnd_libs.lib.keras.custom_utils import random_float
-from IPython.core.debugger import Tracer
+
 layer_dict = {'Convolution2D': Convolution2D,
 							'ZeroPadding2D': ZeroPadding2D,
 							'MaxPooling2D':MaxPooling2D,
@@ -31,10 +27,7 @@ layer_dict = {'Convolution2D': Convolution2D,
 pooling_dict = {'max':MaxPooling2D,'average':AveragePooling2D}
 optimizer_dict = {'sgd':SGD,'rmsprop':RMSprop, 'adam':Adam}
 
-
-
-
-class InceptionV3_finetune():
+class InceptionV3_FC():
 
 	def __init__(self):
 
@@ -44,7 +37,6 @@ class InceptionV3_finetune():
 		self.init = False
 		self.cfgs = None
 		self.loss_functions = ObjectiveFunctions()
-		
 
 	#def
 
@@ -61,9 +53,8 @@ class InceptionV3_finetune():
 
 		pfile = open(self.config_file,'r')
 		self.cfgs = yaml.load(pfile)
-		self.betas=random_float(0,20,self.cfgs['n_channels_partClassifiers'])
 		pfile.close()
-		#Tracer()()
+
 		self.init = True
 
 	#def
@@ -211,7 +202,7 @@ class InceptionV3_finetune():
 		# https://github.com/fchollet/keras/issues/391
 
 	def define(self):
-		
+
 		try:
 
 			self.model = Graph()
@@ -252,75 +243,25 @@ class InceptionV3_finetune():
 			self.add_inceptionE(input_layer=self.last_added_node, list_nb_filter=((320,), (384, 384, 384), (448, 384, 384, 384), (192,)), pool_mode='average', base_name='mixed_9')
 			self.add_inceptionE(input_layer=self.last_added_node, list_nb_filter=((320,), (384, 384, 384), (448, 384, 384, 384), (192,)), pool_mode='max', base_name='mixed_10')
 
-			#self.add_to_graph(AveragePooling2D(pool_size=(5,5)), name='pool3', input=self.last_added_node)
-			#self.io.print_info('Added {1}:{0}'.format('AveragePooling',self.last_added_node))
+			self.add_to_graph(AveragePooling2D(pool_size=(5,5)), name='pool3', input=self.last_added_node)
+			self.io.print_info('Added {1}:{0}'.format('AveragePooling',self.last_added_node))
 
 			"""
 			self.add_to_graph(Flatten(), name='flatten', input='pool3')
 			self.io.print_info('Added {1}:{0}'.format('Flatten',self.last_added_node))
-
 			self.add_to_graph(Dense(self.cfgs['nb_classes']), name='softmax', input='flatten')
 			self.io.print_info('Added {1}:{0}'.format('Dense',self.last_added_node))
 			"""
-			#print 'Adding finetuning layers'---------------------------------------------------------------------------------------
 
+			self.add_to_graph(Convolution2D(self.cfgs['nb_classes'],1,1),name='softmax',input='pool3')
 
-			self.add_to_graph(BatchNormalization(mode=0, epsilon=0.0001, axis=1),name='batchnorm',input=self.last_added_node)
-			self.io.print_info('Added {1}:{0}'.format('BatchNormalization before finetuning',self.last_added_node))
+			self.add_to_graph(Activation(self.cfgs['activation']), name='prob', input='softmax')
 
-			self.add_to_graph(Convolution2D(self.cfgs['n_channels_partClassifiers'],1,1),name='partClassifiers',input=self.last_added_node)
-			self.io.print_info('Added {1}:{0}'.format('partClassifiers',self.last_added_node))
-			
-
-			self.add_to_graph(Activation('relu'),name='relu_on_partClassifiers',input=self.last_added_node)
-			self.io.print_info('Added {1}:{0}'.format('ReLu on partClassifiers',self.last_added_node))			
-
-			if self.cfgs['pooling_AtfineTuning']=='avg':
-				self.add_to_graph(global_Average_Pooling(), name='custom_pool', input=self.last_added_node)
-				self.io.print_info('Added {1}:{0}'.format('Custom Pooling Layer:'+self.cfgs['pooling_AtfineTuning'],self.last_added_node))
-			elif self.cfgs['pooling_AtfineTuning']=='softpool':
-				self.add_to_graph(power_mean_Layer(self.betas), name='custom_pool', input=self.last_added_node)   # Learnable
-				self.io.print_info('Added {1}:{0}'.format('Custom Pooling Layer:'+self.cfgs['pooling_AtfineTuning'],self.last_added_node))
-
-			
-
-			self.add_to_graph(Flatten(), name='flatten', input=self.last_added_node)
-			self.io.print_info('Added {1}:{0}'.format('Flatten',self.last_added_node))
-
-			self.add_to_graph(Dense(self.cfgs['nb_classes']),name='softmax',input=self.last_added_node) #Learnable
-			self.io.print_info('Added {1}:{0}'.format('Softmax-dense weights',self.last_added_node))
-
-			self.add_to_graph(Activation(self.cfgs['activation']), name='prob', input=self.last_added_node)
-			self.io.print_info('Added {1}:{0}'.format('Activation',self.last_added_node))
-
-			#Harsimrat original architecture ---------------------------------------------------------------------------------------
-			
-			# self.add_to_graph(AveragePooling2D(pool_size=(5,5)), name='pool3', input=self.last_added_node)
-			# self.io.print_info('Added {1}:{0}'.format('AveragePooling',self.last_added_node))
-
-			# """
-			# self.add_to_graph(Flatten(), name='flatten', input='pool3')
-			# self.io.print_info('Added {1}:{0}'.format('Flatten',self.last_added_node))
-			# self.add_to_graph(Dense(self.cfgs['nb_classes']), name='softmax', input='flatten')
-			# self.io.print_info('Added {1}:{0}'.format('Dense',self.last_added_node))
-			# """
-
-			# self.add_to_graph(Convolution2D(self.cfgs['nb_classes'],1,1),name='softmax',input='pool3')
-
-			# self.add_to_graph(Activation(self.cfgs['activation']), name='prob', input='softmax')
-
-
-
-
-			#Adding dense finetunning layers
-#Re
 			# Output to the Graph
 			self.model.add_output(name='output', input='prob')
-			#Tracer()()
+
 			if not self.cfgs['model_weights_file'] == 'None':
-				#import ipdb; ipdb.set_trace()
 				self.init_from_this()
-				#import ipdb; ipdb.set_trace()
 			#if
 
 		except Exception as err:
@@ -338,7 +279,7 @@ class InceptionV3_finetune():
 	def init_from_this(self):
 
 		weights_file = self.cfgs['model_weights_file']
-		#Tracer()()
+
 		if not weights_file == 'None':
 			self.load_weights(weights_file)
 			self.io.print_info('Weights Initalized from {0}'.format(weights_file))
@@ -347,12 +288,11 @@ class InceptionV3_finetune():
 	#def
 
 	def load_weights(self, filepath):
-		
-		#Tracer()()
+
 		if filepath.endswith('.npz'):
 			pfile = open(filepath,'r')
 			graph = np.load(pfile)['graph'].item()
-			
+
 			for node_name,weights in graph.items():
 
 				if node_name in self.cfgs['ignore_while_loading']:
@@ -366,25 +306,8 @@ class InceptionV3_finetune():
 			#for
 
 			pfile.close()
-		elif filepath.endswith('.npy'):
-			pfile = open(filepath,'r')
-			graph = np.load(pfile).item()
-			
-			for node_name,weights in graph.items():
 
-				if node_name in self.cfgs['ignore_while_loading']:
-					self.io.print_warning('Ignoring weights from {0}'.format(node_name))
-					continue
-				#if
-
-				self.io.print_info('Transfering parameters from {0}'.format(node_name))
-				self.model.nodes[node_name].set_weights(weights)
-
-			#for
-
-			pfile.close()
 		elif filepath.endswith('.hdf5'):
-
 			self.model.load_weights(filepath)
 		else:
 			self.io.print_error('Unknown model weights file {}'.format(filepath))
@@ -403,21 +326,8 @@ class InceptionV3_finetune():
 	def compile(self,compile_cfgs):
 
 		try:
-
-			#opt = optimizer_dict[compile_cfgs['optimizer']](lr=compile_cfgs['lr'], epsilon=compile_cfgs['epsilon'])
-			opt = SGD(lr=compile_cfgs['lr'])
-			#model_layer = dict([(ler.name, layer) for layer in self.model.layesrs])
-			
-			for layer_name,model_layer in self.model.nodes.items():
-				if layer_name not in self.cfgs['trainable_layers']:
-					model_layer.trainable=False
-				else:
-					self.io.print_info('Trainable Layer: {0}'.format(layer_name))
-
-
-
+			opt = optimizer_dict[compile_cfgs['optimizer']](lr=compile_cfgs['lr'], epsilon=compile_cfgs['epsilon'])
 			self.model.compile(loss={'output':self.loss_functions.dict[compile_cfgs['loss']]}, optimizer=opt)
-			
 		except Exception as e:
 			self.io.print_error('Error configuring the model, {0}'.format(e))
 			self.init = False
@@ -425,8 +335,5 @@ class InceptionV3_finetune():
 		#try
 
 		self.init = True
-
-	def get_model(self):
-		return self.model
 
 	#def

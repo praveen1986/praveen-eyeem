@@ -1,16 +1,8 @@
 # pre-trained weights file, can be a keras hdf5 model or .caffemodel
-#model_weights_file: '/nas2/deliverables/v16/model.hdf5'
-#model_weights_file: '/nas2/praveen/home/rnd-libs/rnd_libs/lib/keras/model-full-conv.npy'
-model_weights_file: '/nas2/praveen/home/rnd-libs/results/snapshot/inception_v3_finetune_snapshot_5000.hdf5'
+model_weights_file: '/nas2/deliverables/v16/model.hdf5'
 # ignore these layer types while loading
-ignore_while_loading: ['softmax','partClassifiers','pool3','prob','relu_on_partClassifiers','batchnorm']
-pooling_AtfineTuning: 'avg'
+ignore_while_loading: ['softmax']
 # For using full image for training
-#number of partClassifiers.
-n_channels_partClassifiers: 9000
-
-trainable_layers: ['softmax','partClassifiers','custom_pool','flatten','prob','output','relu_on_partClassifiers','batchnorm']
-
 border_mode: 'same'
 # convolutional layer init
 conv_init: he_normal
@@ -23,9 +15,9 @@ activation: 'sigmoid'
 # number of image channels
 n_channels: 3
 # image width
-image_width: 779
+image_width: 299
 # image height
-image_height: 779
+image_height: 299
 # drop out rate
 drop_out: 0.5
 
@@ -46,7 +38,7 @@ nodes:
       type: BatchNormalization
       parameter:
         mode: 0
-        epsilon: 0.000001
+        epsilon: 0.0001
         axis: 1
         momentum: 0
 
@@ -167,5 +159,3 @@ nodes:
       parameter:
         pool_size: [3,3]
         strides: [2,2]
-
-

@@ -1,0 +1,22 @@
+# For using full image for training
+border_mode: 'full'
+# convolutional layer init
+conv_init: he_normal
+# Fully connected layer initialization
+fc_init: 'initial'
+# Number of outputs
+nb_classes: 1000
+# scaling applied to activations
+activation: 'softmax'
+# non linearity applied to scale outputs
+fc_non_linear: 'relu'
+# non linearity applied to scale outputs
+conv_non_linear: 'relu'
+# number of image channels
+n_channels: 3
+# image width
+image_width: 224
+# image height
+image_height: 224
+# loss function
+loss: 'categorical_crossentropy'

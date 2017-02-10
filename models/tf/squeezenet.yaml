@@ -1,0 +1,24 @@
+# pre-trained weights file, should be a npy file with dictionary keys to weights 
+model_weights_file: None
+#model_weights_file: /nas/models/SqueezeNet/SqueezeNet-Deep-Compression/decompressed_SqueezeNet.npy
+# ignore these layer types while loading
+ignore_while_loading: []
+#ignore_while_loading: ['conv_final']
+# Node to feed to loss function
+optimization_node: 'flatten'
+# Node to feed to evaluation
+prediction_node: 'prob'
+# Number of outputs
+nb_classes: 5220
+# scaling applied to activations
+activation: 'softmax'
+# batch size
+batch_size: 32
+# number of image channels
+n_channels: 3
+# image width
+image_width: 227
+# image height
+image_height: 227
+# dropout rates
+drop_out: 0.5

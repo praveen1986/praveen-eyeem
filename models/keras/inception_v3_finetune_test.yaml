@@ -2,6 +2,7 @@
 #model_weights_file: '/nas2/deliverables/v16/model.hdf5'
 #model_weights_file: '/nas2/praveen/home/rnd-libs/rnd_libs/lib/keras/model-full-conv.npy'
 model_weights_file: '/nas2/praveen/home/rnd-libs/results/snapshot/inception_v3_finetune_snapshot_5000.hdf5'
+
 # ignore these layer types while loading
 ignore_while_loading: ['softmax','partClassifiers','pool3','prob','relu_on_partClassifiers','batchnorm']
 pooling_AtfineTuning: 'avg'
